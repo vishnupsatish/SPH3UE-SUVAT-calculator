@@ -80,11 +80,11 @@ Teacher: Albert Fong
                 neq = neq.replaceAll(e, vals[e]);
             }
 
-            console.log(vals, neq, sf);
-
-            const ans = algebra.parse(neq).solveFor(sf);
-
-            console.log(ans);
+            try {
+                const ans = algebra.parse(neq).solveFor(sf);
+            } catch (error) {
+                return false;
+            }
 
             if (Array.isArray(ans)) {
                 for (e of ans) {
