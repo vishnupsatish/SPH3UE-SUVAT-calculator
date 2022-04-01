@@ -26,7 +26,7 @@ Teacher: Albert Fong
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Calculate SUVAT Values</h5>
-                    <p class="card-text">Calculate straight-line kinematics values (SUVAT). Enter three of the below values then press "Calculate".</p>
+                    <p class="card-text">Calculate straight-line kinematics values (SUVAT). Enter exactly three of the below values then press "Calculate". <em>If any non-numeric values are entered, they will be ignored.</em></p>
                     <div class="mb-3">
                         <label for="s" class="form-label">Displacement (m)</label>
                         <input type="number" step="0.01" inputmode="decimal" class="form-control" id="s">
@@ -47,20 +47,293 @@ Teacher: Albert Fong
                         <label for="t" class="form-label">Time (s)</label>
                         <input type="number" step="0.01" min="0" inputmode="decimal" class="form-control" id="t">
                     </div>
-                    <button class="btn btn-primary">Calculate</button>
+                    <p id="invalid" style="color: red; display: none;">You have entered an invalid input or the given scenario does not exist.</p>
+                    <button onclick="solve()" class="btn btn-primary">Calculate</button>
                 </div>
             </div>
             <p>Created by Vishnu Satish as part of an SPH3UE project.</p>
         </div>
     </section>
 
+    <script src="https://algebra.js.org/javascripts/algebra-0.2.6.min.js"></script>
+
     <script>
-        const s = document.getElementById('s');
-        const u = document.getElementById('u');
-        const v = document.getElementById('v');
-        const a = document.getElementById('a');
-        const t = document.getElementById('t');
-        
+        // Equation names: based on the variable not in the equation
+        const se = 'a = (v - u) / t';
+        const ae = 's = (v + u) / 2 * (t)';
+        const ve = 's = u * t + 1 / 2 * a * (t)^2';
+        const ue = 's = v * t - 1 / 2 * a * (t)^2';
+        const te = '(v)^2 = (u)^2 + 2 * a * s';
+
+        const equation = (eq, vals, sf) => { // Returns false if invalid
+            // Special case, since what we are solving for cannot be in denominator
+            if (sf == 't' && eq == se) {
+                if (vals['a'] == 0) {
+                    return false;
+                }
+                return (vals['v'] - vals['u']) / vals['a'];
+            }
+
+            let neq = eq;
+
+            for (e of Object.keys(vals)) {
+                neq = neq.replaceAll(e, vals[e]);
+            }
+
+            console.log(vals, neq, sf);
+
+            const ans = algebra.parse(neq).solveFor(sf);
+
+            console.log(ans);
+
+            if (Array.isArray(ans)) {
+                for (e of ans) {
+                    if (e >= 0) {
+                        return e;
+                    }
+                }
+
+                if (ans.length == 0) {
+                    return false;
+                }
+
+                return ans[0];
+            } else {
+                return ans.numer / ans.denom;
+            }
+        }
+
+        const solve = () => {
+            const inv = document.getElementById('invalid');
+            inv.style.display = 'none';
+    
+            let st = document.getElementById('s');
+            let ut = document.getElementById('u');
+            let vt = document.getElementById('v');
+            let at = document.getElementById('a');
+            let tt = document.getElementById('t');
+
+            let s = document.getElementById('s').value.trim();
+            let u = document.getElementById('u').value.trim();
+            let v = document.getElementById('v').value.trim();
+            let a = document.getElementById('a').value.trim();
+            let t = document.getElementById('t').value.trim();
+    
+            const cnt = (s != '') + (u != '') + (v != '') + (a != '') + (t != '');
+
+            if (cnt != 3) {
+                inv.style.display = 'block';
+                return;
+            }
+
+            if (s != '' && u != '' && v != '') {
+                s = parseFloat(s);
+                u = parseFloat(u);
+                v = parseFloat(v);
+                if (s == NaN || u == NaN || v == NaN) {
+                    inv.style.display = 'block';
+                    return;
+                }
+
+                tt.value = equation(ae, {s: s, v: v, u: u}, 't');
+                at.value = equation(te, {s: s, v: v, u: u}, 'a');
+            }
+
+
+            if (s != '' && u != '' && a != '') {
+                s = parseFloat(s);
+                u = parseFloat(u);
+                a = parseFloat(a);
+                if (s == NaN || u == NaN || a == NaN) {
+                    inv.style.display = 'block';
+                    return;
+                }
+            
+                const v1 = equation(ve, {s: s, a: a, u: u}, 't');
+                const v2 = equation(te, {s: s, a: a, u: u}, 'v');
+
+                if (v1 == false || v2 == false) {
+                    inv.style.display = 'block';
+                    return;
+                }
+
+                tt.value = v1;
+                vt.value = v2;
+            }
+
+            if (s != '' && u != '' && t != '') {
+                s = parseFloat(s);
+                u = parseFloat(u);
+                t = parseFloat(t);
+                if (s == NaN || u == NaN || t == NaN) {
+                    inv.style.display = 'block';
+                    return;
+                }
+            
+                const v1 = equation(ae, {s: s, t: t, u: u}, 'v');
+                const v2 = equation(ve, {s: s, t: t, u: u}, 'a');
+
+                if (v1 == false || v2 == false) {
+                    inv.style.display = 'block';
+                    return;
+                }
+
+                vt.value = v1;
+                at.value = v2;
+            }
+
+            if (s != '' && v != '' && t != '') {
+                s = parseFloat(s);
+                v = parseFloat(v);
+                t = parseFloat(t);
+                if (s == NaN || v == NaN || t == NaN) {
+                    inv.style.display = 'block';
+                    return;
+                }
+            
+                const v1 = equation(ue, {s: s, t: t, v: v}, 'a');
+                const v2 = equation(ae, {s: s, t: t, v: v}, 'u');
+
+                if (v1 == false || v2 == false) {
+                    inv.style.display = 'block';
+                    return;
+                }
+
+                at.value = v1;
+                ut.value = v2;
+            }
+
+            if (s != '' && v != '' && a != '') {
+                s = parseFloat(s);
+                v = parseFloat(v);
+                a = parseFloat(a);
+                if (s == NaN || v == NaN || a == NaN) {
+                    inv.style.display = 'block';
+                    return;
+                }
+            
+                const v1 = equation(ue, {s: s, a: a, v: v}, 't');
+                const v2 = equation(te, {s: s, a: a, v: v}, 'u');
+
+                if (v1 == false || v2 == false) {
+                    inv.style.display = 'block';
+                    return;
+                }
+
+                tt.value = v1;
+                ut.value = v2;
+            }
+
+            if (u != '' && v != '' && a != '') {
+                u = parseFloat(u);
+                v = parseFloat(v);
+                a = parseFloat(a);
+                if (u == NaN || v == NaN || a == NaN) {
+                    inv.style.display = 'block';
+                    return;
+                }
+            
+                const v1 = equation(se, {u: u, a: a, v: v}, 't');
+                const v2 = equation(te, {u: u, a: a, v: v}, 's');
+
+                if (v1 == false || v2 == false) {
+                    inv.style.display = 'block';
+                    return;
+                }
+
+                tt.value = v1;
+                st.value = v2;
+            }
+
+            if (u != '' && v != '' && t != '') {
+                u = parseFloat(u);
+                v = parseFloat(v);
+                t = parseFloat(t);
+                if (u == NaN || v == NaN || t == NaN) {
+                    inv.style.display = 'block';
+                    return;
+                }
+            
+                const v1 = equation(ae, {u: u, t: t, v: v}, 's');
+                const v2 = equation(se, {u: u, t: t, v: v}, 'a');
+
+                if (v1 == false || v2 == false) {
+                    inv.style.display = 'block';
+                    return;
+                }
+
+                st.value = v1;
+                at.value = v2;
+            }
+
+            if (a != '' && v != '' && t != '') {
+                a = parseFloat(a);
+                v = parseFloat(v);
+                t = parseFloat(t);
+                if (a == NaN || v == NaN || t == NaN) {
+                    inv.style.display = 'block';
+                    return;
+                }
+            
+                const v1 = equation(se, {a: a, t: t, v: v}, 'u');
+                const v2 = equation(ue, {a: a, t: t, v: v}, 's');
+
+                if (v1 == false || v2 == false) {
+                    inv.style.display = 'block';
+                    return;
+                }
+
+                ut.value = v1;
+                st.value = v2;
+            }
+
+            if (a != '' && u != '' && t != '') {
+                a = parseFloat(a);
+                u = parseFloat(u);
+                t = parseFloat(t);
+                if (a == NaN || u == NaN || t == NaN) {
+                    inv.style.display = 'block';
+                    return;
+                }
+            
+                const v1 = equation(se, {a: a, t: t, u: u}, 'v');
+                const v2 = equation(ve, {a: a, t: t, u: u}, 's');
+
+                if (v1 == false || v2 == false) {
+                    inv.style.display = 'block';
+                    return;
+                }
+
+                vt.value = v1;
+                st.value = v2;
+            }
+
+            if (s != '' && a != '' && t != '') {
+                s = parseFloat(s);
+                a = parseFloat(a);
+                t = parseFloat(t);
+                if (s == NaN || a == NaN || t == NaN) {
+                    inv.style.display = 'block';
+                    return;
+                }
+            
+                const v1 = equation(ue, {s: s, t: t, a: a}, 'v');
+                const v2 = equation(ve, {s: s, t: t, a: a}, 'u');
+
+                if (v1 == false || v2 == false) {
+                    inv.style.display = 'block';
+                    return;
+                }
+
+                vt.value = v1;
+                ut.value = v2;
+            }
+
+            if (parseFloat(tt.value) < 0) {
+                inv.style.display = 'block';
+                return;
+            }
+        }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
