@@ -78,7 +78,7 @@ Teacher: Albert Fong
             let neq = eq;
 
             for (e of Object.keys(vals)) {
-                neq = neq.replaceAll(e, vals[e]);
+                neq = neq.replaceAll(e, '(' + String(vals[e]) + ')');
             }
 
             let ans;
